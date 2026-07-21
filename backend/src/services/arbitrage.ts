@@ -9,7 +9,7 @@ class AIArbitrageEngine {
   private readonly tradingVolume = 10000; // Mock trade volume in USDT
 
   constructor() {
-    this.startEngine();
+    // Background scanner is started explicitly after database initialization to prevent race conditions
   }
 
   /**

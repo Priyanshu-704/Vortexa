@@ -12,6 +12,7 @@ import stakingRoutes from './routes/staking';
 import referralRoutes from './routes/referral';
 import aiRoutes from './routes/ai';
 import adminRoutes from './routes/admin';
+import ArbitrageEngine from './services/arbitrage';
 
 const app = express();
 
@@ -29,7 +30,7 @@ app.use(cookieParser());
 // Rate Limiter to prevent brute-force and DDoS
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  max: NODE_ENV === 'production' ? 100 : 10000, // Limit each IP to 100 requests (or 10000 in dev) per window
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests from this IP, please try again after 15 minutes.' },
@@ -37,7 +38,7 @@ const apiLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Limit login/register attempts
+  max: NODE_ENV === 'production' ? 20 : 1000, // Limit login/register attempts (or 1000 in dev)
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login or registration attempts. Please try again later.' },
@@ -70,6 +71,7 @@ async function startServer() {
   try {
     await initializeDatabase();
     await runSeed();
+    await ArbitrageEngine.startEngine();
     if (process.env.NODE_ENV !== 'test') {
       app.listen(PORT, () => {
         console.log(`Vortexa server is running in ${NODE_ENV} mode on port ${PORT}`);
